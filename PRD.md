@@ -55,7 +55,7 @@ Claude Code session
 2. Resolve which release(s) are needed:
    - `list-releases`: none (just lists the bucket).
    - `list-datasets` / `describe-dataset`: from `--release` (default `latest`).
-   - `run-sql`: from schema-qualified table references found in the query text (e.g. `"26.03".target`), plus `latest` as the default search path for unqualified names.
+   - `run-sql`: by parsing the query with `sqlglot` and extracting the schema qualifier of every table reference (e.g. `"26.03".target` → release `26.03`); unqualified table references fall back to `latest` as the default search path.
 3. For each needed release, check whether its schema already exists in the DuckDB file. If not:
    a. Fetch (if not already cached) that release's croissant.json.
    b. Parse it and build the schema: `CREATE SCHEMA "<release>"`, then for each dataset, `CREATE VIEW "<release>".<dataset> AS SELECT * FROM read_parquet('s3://.../<dataset>/*.parquet')`.
@@ -92,11 +92,13 @@ Executes a read-only DuckDB SQL query against the views. No `--release` flag:
 - This gives natural support for cross-release queries (e.g. joining `"26.06".target` against `"26.03".target`) without any extra flag.
 
 **Guardrails on `run-sql`:**
-- **Read-only enforcement**: naive heuristic — first keyword must be `SELECT`/`WITH`; reject multiple statements (e.g. via semicolon). No `sqlglot`/AST-based validation — threat model is low (local tool, LLM-generated queries, not adversarial input), so a lightweight check is sufficient.
+- **`sqlglot`-based parsing**, used for two purposes:
+  1. **Read-only enforcement**: parse the query into an AST (DuckDB dialect) and reject anything that isn't a single read-only `SELECT`/`WITH` statement — catches `ATTACH`/`COPY`/`INSTALL`/`PRAGMA`/DDL/DML anywhere in the statement, including inside CTEs/subqueries, which a plain string/keyword check could miss.
+  2. **Schema/release extraction**: walk the parsed table references to collect every schema qualifier used in the query (e.g. `"26.03".target` → `26.03`). This list drives which release schemas get lazy-init'd before execution (see §6), and also confirms every referenced schema is a well-formed release identifier before the query runs.
 - **Row cap**: results truncated at ~1,000 rows; response indicates truncation occurred.
 - **Query timeout**: queries running longer than ~30–60s are killed and return a `timeout` error.
 - **No cost/EXPLAIN pre-check** — out of scope for phase 1.
-- **Release scoping is structural, not a separate allow-list check**: since only `latest`'s schema is in the default search path, any other release is only reachable via explicit schema-qualification in the SQL — DuckDB's own scoping enforces this without additional query-text validation beyond identifying which schemas to lazy-init.
+- **Release scoping remains structural, now double-enforced**: unqualified table names resolve only against `latest` (via DuckDB `search_path`); any other release must be explicitly schema-qualified in the SQL, and `sqlglot` extraction is what identifies and validates those qualifiers up front rather than relying on the `search_path` default alone.
 
 ## 8. Skill Design
 
@@ -116,6 +118,7 @@ Executes a read-only DuckDB SQL query against the views. No `--release` flag:
 - **Package/dependency manager**: `uv`
 - **CLI framework**: `typer`
 - **Query engine**: DuckDB (`httpfs` extension, anonymous/unsigned S3 access)
+- **SQL validation/parsing**: `sqlglot` (DuckDB dialect) — read-only enforcement and schema/release extraction for `run-sql`
 - **Distribution**: `uvx --from <repo-path> otai ...` (no persistent global install required)
 
 ## 10. Testing Strategy
@@ -131,7 +134,6 @@ Fully offline — no real network calls in tests.
 - MCP server exposing the four operations as native tools.
 - Standalone Python agentic loop via the Claude Agent SDK (would enable the tool to run outside Claude Code).
 - Explicit `otai init` command (initialization stays purely implicit).
-- `sqlglot`-based SQL validation (naive heuristic deemed sufficient for the threat model).
 - Cost/`EXPLAIN` pre-check before query execution.
 - Local materialization of any dataset (views only, always).
 - Multi-release support in `list-datasets` / `describe-dataset`.
