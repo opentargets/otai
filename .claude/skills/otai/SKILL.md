@@ -19,11 +19,20 @@ CLI correctly and interpret what it returns.
 uvx --from git+https://github.com/opentargets/otai.git otai <subcommand> [args] [--format table]
 ```
 
-`<repo-path>` is the absolute path to the local `otai` checkout (this
-repo). Every invocation picks up local code changes — no persistent
-install. Omit `--format table` to get the default JSON envelope (preferred
-for your own parsing); pass it only when showing a human-readable table
-directly to the user.
+A local checkout is not required. uvx installs and runs OTAI directly from the Open Targets GitHub repository.
+
+Omit --format table to receive the default JSON envelope, which is preferred for agent parsing. Use --format table only when displaying results directly to a person.
+
+For reproducible execution, pin a release tag or commit:
+
+uvx --from git+https://github.com/opentargets/otai.git@<tag-or-commit> \
+  otai <subcommand> [args] [--format table]
+
+When developing OTAI locally, use the repository path instead:
+
+uvx --from <repo-path> \
+  otai <subcommand> [args] [--format table]
+
 
 ## Subcommands
 
