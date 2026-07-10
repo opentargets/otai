@@ -1,5 +1,7 @@
 # otai — Open Targets Agentic Query Tool
 
+![otai logo](images/otai-logo.svg)
+
 A CLI, paired with a Claude Code Skill, that lets Claude (or you) answer
 natural-language questions about Open Targets Platform release data by
 generating and executing SQL against the platform's parquet files hosted on

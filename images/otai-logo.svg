@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 840" role="img" aria-labelledby="title desc">
+  <title id="title">OTAI drink logo</title>
+  <desc id="desc">A transparent glass with a blue straw and pink liquid. Coloured Open Targets dataset names float inside, with the Open Targets helix as a watermark on the glass.</desc>
+
+  <defs>
+    <linearGradient id="pink-liquid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ff91ad" stop-opacity=".88"/>
+      <stop offset="1" stop-color="#e84b7a" stop-opacity=".94"/>
+    </linearGradient>
+    <linearGradient id="blue-straw" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#55c3eb"/>
+      <stop offset="1" stop-color="#1266a3"/>
+    </linearGradient>
+    <linearGradient id="glass-sheen" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".35"/>
+      <stop offset=".46" stop-color="#ffffff" stop-opacity=".04"/>
+      <stop offset="1" stop-color="#8fc7e7" stop-opacity=".18"/>
+    </linearGradient>
+    <clipPath id="glass-inside">
+      <path d="M151 196h338l-39 429c-3 31-29 55-60 55H250c-31 0-57-24-60-55z"/>
+    </clipPath>
+  </defs>
+
+  <!-- glass opening and rear rim: the straw passes in front of the upper arc -->
+  <ellipse cx="320" cy="196" rx="169" ry="22" fill="#e8f7ff" fill-opacity=".14"/>
+  <path d="M151 196a169 22 0 0 1 338 0" fill="none" stroke="#688fa8" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- blue straw -->
+  <path d="M395 454 437 96q3-26 29-26h62q22 0 22 22v13" fill="none" stroke="#0b4f84" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" opacity=".2"/>
+  <path d="M389 448 431 90q3-26 29-26h62q22 0 22 22v13" fill="none" stroke="url(#blue-straw)" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- liquid-shaped outputs falling from the straw -->
+  <g font-family="Inter, ui-sans-serif, system-ui, sans-serif" font-weight="650" text-anchor="middle">
+    <g transform="translate(548 162)">
+      <path d="M0-39C9-22 38-1 38 23a38 34 0 1 1-76 0C-38-1-9-22 0-39Z" fill="#abd0e7"/>
+      <text x="0" y="22" font-size="12" fill="#245f91">summary</text>
+    </g>
+  </g>
+
+  <ellipse cx="320" cy="689" rx="151" ry="18" fill="#173d59" opacity=".13"/>
+
+  <!-- contents of the glass -->
+  <g clip-path="url(#glass-inside)">
+    <path d="M135 410c75-29 126 24 190-3 70-29 118 18 188-3v296H135z" fill="url(#pink-liquid)"/>
+    <path d="M135 410c75-29 126 24 190-3 70-29 118 18 188-3" fill="none" stroke="#ffc0d0" stroke-width="7" opacity=".9"/>
+
+    <!-- dataset tables: different colours and type sizes -->
+    <g font-family="ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace" font-weight="700">
+      <text x="194" y="465" font-size="38" fill="#61328f" transform="rotate(-7 194 465)">target</text>
+      <text x="276" y="505" font-size="23" fill="#0a678f" transform="rotate(5 276 505)">association</text>
+      <text x="184" y="548" font-size="29" fill="#176b4a" transform="rotate(7 184 548)">disease</text>
+      <text x="354" y="573" font-size="39" fill="#8a355e" transform="rotate(-8 354 573)">drug</text>
+      <text x="207" y="616" font-size="25" fill="#7b4d08" transform="rotate(-4 207 616)">study</text>
+      <text x="282" y="655" font-size="31" fill="#174f95" transform="rotate(6 282 655)">variant</text>
+    </g>
+  </g>
+
+  <!-- transparent glass; fill and outline are separate so there is no middle line -->
+  <path d="M151 196h338l-39 429c-3 31-29 55-60 55H250c-31 0-57-24-60-55z" fill="url(#glass-sheen)"/>
+  <path d="M489 196 450 625c-3 31-29 55-60 55H250c-31 0-57-24-60-55L151 196" fill="none" stroke="#688fa8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- front rim: this lower arc passes in front of the straw -->
+  <path d="M489 196a169 22 0 0 1-338 0" fill="none" stroke="#688fa8" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Exact Open Targets image mark from the supplied official SVG. -->
+  <svg x="185" y="240" width="120" height="126" viewBox="0 0 320 346.78" opacity=".62" aria-label="Open Targets watermark">
+    <path fill="#abd0e7" d="M45.05 262.19a37.12 37.12 0 110-74.23h214.77v74.24z" transform="translate(-7.94 -6.26)"/>
+    <path fill="#3488c8" d="M171 278.81v37.12a37.12 37.12 0 01-74.24 0v-37.12z" transform="translate(-7.94 -6.26)"/>
+    <path fill="#abd0e7" d="M185.58 80.5V43.38a37.12 37.12 0 0174.24 0V80.5z" transform="translate(-7.94 -6.26)"/>
+    <path fill="#3488c8" d="M96.76 97.11h214.75a37.12 37.12 0 110 74.24H96.76z" transform="translate(-7.94 -6.26)"/>
+  </svg>
+
+  <text x="320" y="805" text-anchor="middle" fill="#3488c8"
+        font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
+        font-size="72" font-weight="750" letter-spacing="9">OTAI</text>
+</svg>
