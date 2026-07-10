@@ -126,9 +126,17 @@ Every command emits one of:
    <seconds>` if the query is already minimal and legitimately slow;
    `sql_error` / `guardrail_violation` → fix the SQL; `release_not_found`
    → check `list-releases` before retrying.
-6. **Cite your sources in the final answer**: state which release(s) were
-   queried and show the actual SQL you executed, so the user can verify or
-   rerun it.
+6. **End your final answer with every `run-sql` query you ran**, not just
+   the last one if you iterated — plus the release(s) queried — so the
+   user can verify or rerun them.
+7. **Check `data.truncated` on a successful `run-sql`, not just errors.**
+   A capped result (~1000 rows) is still `ok: true`; ignoring `truncated`
+   risks presenting a partial result as complete. When it's `true`, prefer
+   re-querying with an aggregate (`COUNT`, `GROUP BY`, `TOP N`) over the
+   raw rows; if the user genuinely needs row-level detail beyond 1000,
+   add an `ORDER BY` on a stable column and page with repeated
+   `LIMIT`/`OFFSET` calls. Either way, tell the user when what you're
+   showing is a subset.
 
 ## Example
 
