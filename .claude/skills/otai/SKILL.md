@@ -138,6 +138,11 @@ Every command emits one of:
    `LIMIT`/`OFFSET` calls. Either way, tell the user when what you're
    showing is a subset.
 
+## Guidelines
+
+- When a user asks for associations, assume they are asking for direct, not indirect (unless otherwise specified).
+- If the tables are very large, timeouts may occur. In such cases, ask if the user would like to download the data (explain how much data will be transferred). If yes, download and run the query there locally.
+
 ## Example
 
 Question: "How many approved drug targets does the human genome have,
