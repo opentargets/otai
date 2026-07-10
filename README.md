@@ -9,7 +9,7 @@ generating and executing SQL against the platform's parquet files hosted on
 a public S3 bucket. No local data materialization, no hosted service —
 phase 1 runs entirely inside a local Claude Code session or a terminal.
 
-See [PRD.md](PRD.md) for the full design (architecture, guardrails, caching,
+See [Product requirements document](issues/PRD.md) for the full design (architecture, guardrails, caching,
 testing strategy) and [issues/](issues/) for the vertical slices phase 1 was
 broken into, plus follow-on issues filed since.
 
