@@ -49,11 +49,15 @@ and `run_sql`:
    immutable, unlike the 24h "latest" cache), then `croissant.parse_datasets()`
    extracts dataset names, field-level types/descriptions, cross-dataset
    `references`, and nested `subField`s from the Croissant 1.0 JSON-LD shape.
-3. **Lazily materialize the DuckDB schema** — if the release's schema isn't
-   already in the shared catalog file (`~/.cache/otai/catalog.duckdb`, one
-   schema namespace per release), `schema_builder.build_release_schema()`
-   creates it: `CREATE SCHEMA "<release>"` + one `CREATE VIEW` per dataset
-   over `read_parquet(<base_uri>/<release>/output/<glob>)`.
+3. **Lazily materialize the DuckLake schema** — if the release's schema
+   isn't already in the shared local DuckLake catalog
+   (`~/.cache/otai/catalog.duckdb`, attached via the `ducklake` extension
+   as database `lake`, one schema namespace per release),
+   `schema_builder.build_release_schema()` creates it: `CREATE SCHEMA
+   lake."<release>"` + one `CREATE TABLE` per dataset, with that dataset's
+   resolved parquet files (`<base_uri>/<release>/output/<glob>`) registered
+   onto it via `ducklake_add_data_files` — no data is copied, DuckLake only
+   records metadata about files that stay exactly where they are on S3.
 4. **Execute** (only for `run-sql`) — `sql_guard.run_guarded_query()`
    validates, runs, caps, and envelopes the query; `commands.run_sql` sets
    `search_path` to `latest` first, so unqualified table names resolve
@@ -74,11 +78,14 @@ and `run_sql`:
   (defaults to a real `urlopen` call) so tests never hit the network. Both
   share `json_cache.py` for their on-disk cache file I/O (tolerant reads
   that treat a corrupt file as a miss, atomic writes via temp-file+rename).
-- `schema_builder.py` — DuckDB schema/view construction; takes an
+- `schema_builder.py` — DuckLake schema/table construction; takes an
   injectable `base_uri` (defaults to the real S3 bucket) so tests point it
-  at local fixture parquet files via `file://` instead. Shows a `tqdm`
-  progress bar while building (a full release build measured ~18s for 55
-  datasets) and logs via `loguru` — both on stderr, never stdout.
+  at local fixture parquet files via a `file://` URI instead. Forces
+  anonymous S3 access (an explicit `config`-provider secret, scoped to the
+  bucket) rather than relying on DuckDB's default credential chain, so
+  ambient AWS credentials in the caller's shell are never used. Shows a
+  `tqdm` progress bar while building (a full release build measured ~18s
+  for 55 datasets) and logs via `loguru` — both on stderr, never stdout.
 - `sql_guard.py` — the `run-sql` guardrails, deliberately decoupled from
   release resolution so they're tested against a synthetic in-memory
   DuckDB, independent of Open Targets fixtures:
@@ -94,7 +101,7 @@ and `run_sql`:
     a daemon thread, and past the deadline the main thread calls
     `conn.interrupt()` on the shared connection from outside — DuckDB has
     no built-in `statement_timeout`.
-- `catalog.py` — the shared DuckDB catalog file. `connect_catalog()`
+- `catalog.py` — the shared local DuckLake catalog. `connect_catalog()`
   (read-write) retries on lock contention rather than failing immediately;
   `try_connect_readonly()` lets a caller peek at already-built schemas
   without taking the write lock at all, since read-only connections
