@@ -323,7 +323,7 @@ def run_sql(
                 cache_dir
             )
 
-        conn.execute("SET search_path = ?", [f'"{release}"'])
+        conn.execute("SET search_path = ?", [f'"{catalog.LAKE_ALIAS}"."{release}"'])
     except Exception as exc:  # noqa: BLE001
         if conn is not None:
             conn.close()

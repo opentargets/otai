@@ -219,17 +219,9 @@ def test_list_datasets_builds_catalog_schema_on_first_run(
 
     _invoke_with_fixtures(["list-datasets"], cache_dir, base_uri)
 
-    import duckdb
-
-    conn = duckdb.connect(str(cache_dir / "catalog.duckdb"))
+    conn = catalog.connect_catalog(cache_dir)
     try:
-        schemas = {
-            row[0]
-            for row in conn.execute(
-                "SELECT schema_name FROM information_schema.schemata"
-            ).fetchall()
-        }
-        assert release in schemas
+        assert release in catalog.list_cached_schemas(conn)
     finally:
         conn.close()
 
@@ -367,9 +359,13 @@ def test_run_sql_timeout_flag_actually_shortens_execution(
     conn = catalog.connect_catalog(cache_dir)
     try:
         conn.execute(
-            f'CREATE VIEW "{release}".slow_a AS SELECT * FROM range(100000000)'
+            f'CREATE VIEW {catalog.LAKE_ALIAS}."{release}".slow_a AS '
+            "SELECT * FROM range(100000000)"
         )
-        conn.execute(f'CREATE VIEW "{release}".slow_b AS SELECT * FROM range(100000)')
+        conn.execute(
+            f'CREATE VIEW {catalog.LAKE_ALIAS}."{release}".slow_b AS '
+            "SELECT * FROM range(100000)"
+        )
     finally:
         conn.close()
 

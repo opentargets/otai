@@ -34,7 +34,7 @@ def test_list_releases_reports_latest_and_no_cached_schemas(tmp_path):
 
 def test_list_releases_flags_schemas_already_in_catalog_as_cached(tmp_path):
     conn = catalog.connect_catalog(tmp_path)
-    conn.execute('CREATE SCHEMA "25.12"')
+    conn.execute(f'CREATE SCHEMA {catalog.LAKE_ALIAS}."25.12"')
     conn.close()
 
     fetch = Mock(return_value=SAMPLE_LISTING_XML)
@@ -543,7 +543,8 @@ class TestRunSql:
             tmp_path,
             base_uri,
             release,
-            f'CREATE VIEW "{release}".big AS SELECT * FROM range(2500) AS t(n)',
+            f'CREATE VIEW {catalog.LAKE_ALIAS}."{release}".big AS '
+            "SELECT * FROM range(2500) AS t(n)",
         )
 
         result = commands.run_sql(
@@ -566,12 +567,14 @@ class TestRunSql:
             tmp_path,
             base_uri,
             release,
-            f'CREATE VIEW "{release}".slow_a AS SELECT * FROM range(100000000)',
+            f'CREATE VIEW {catalog.LAKE_ALIAS}."{release}".slow_a AS '
+            "SELECT * FROM range(100000000)",
         )
         conn = catalog.connect_catalog(tmp_path)
         try:
             conn.execute(
-                f'CREATE VIEW "{release}".slow_b AS SELECT * FROM range(100000)'
+                f'CREATE VIEW {catalog.LAKE_ALIAS}."{release}".slow_b AS '
+                "SELECT * FROM range(100000)"
             )
         finally:
             conn.close()
@@ -757,7 +760,8 @@ class TestRunSql:
         conn = catalog.connect_catalog(tmp_path)
         try:
             conn.execute(
-                f'CREATE VIEW "{other}".big AS SELECT * FROM range(2500) AS t(n)'
+                f'CREATE VIEW {catalog.LAKE_ALIAS}."{other}".big AS '
+                "SELECT * FROM range(2500) AS t(n)"
             )
         finally:
             conn.close()
