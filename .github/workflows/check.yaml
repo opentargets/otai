@@ -18,6 +18,9 @@ jobs:
       - name: Sync dependencies
         run: uv sync --frozen --all-groups
 
+      - name: Pre-install DuckLake extension
+        run: uv run python -c "import duckdb; duckdb.connect().execute('INSTALL ducklake')"
+
       - name: Run tests
         run: uv run --frozen pytest -rxs
 

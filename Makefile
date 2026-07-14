@@ -5,6 +5,7 @@ help: ## Show this help
 
 dev: .git/hooks/pre-commit ## Install dev dependencies and pre-commit hook
 	@uv sync --all-groups
+	@uv run python -c "import duckdb; duckdb.connect().execute('INSTALL ducklake')"
 	@echo "dev dependencies installed"
 
 .git/hooks/pre-commit:
