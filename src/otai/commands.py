@@ -323,6 +323,16 @@ def run_sql(
                 cache_dir
             )
 
+        # Every branch above may hand back a connection that has never had
+        # anonymous S3 access established on it - the write-connection
+        # branch only gets it as a side effect of build_release_schema for
+        # releases that were actually missing, and the readonly/warm-cache
+        # branch never calls it at all, even though DuckLake only stores
+        # metadata locally and still reads parquet from S3 at query time.
+        # Re-running this here is idempotent (CREATE OR REPLACE SECRET,
+        # INSTALL/LOAD are all safe to repeat) and a no-op for file://
+        # fixtures, so it's cheap to call unconditionally on every path.
+        schema_builder._ensure_s3_access(conn, base_uri)
         conn.execute("SET search_path = ?", [f'"{catalog.LAKE_ALIAS}"."{release}"'])
     except Exception as exc:  # noqa: BLE001
         if conn is not None:

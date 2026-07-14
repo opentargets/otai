@@ -467,6 +467,53 @@ class TestRunSql:
         assert result["ok"] is True
         assert result["data"]["rows"] == [[2]]
 
+    def test_warm_cache_path_still_establishes_s3_access(
+        self, tmp_path, fixture_release_layout
+    ):
+        # _ensure_s3_access forces anonymous S3 access and must run on
+        # every connection run_sql hands to a query, not just the cold
+        # path inside build_release_schema - DuckLake only stores metadata
+        # locally and still reads parquet from S3 at query time, so a warm
+        # -cache connection with no anonymous secret would silently fall
+        # back to DuckDB's default credential_chain provider and risk
+        # signing requests with the caller's ambient AWS credentials.
+        base_uri, _release, _dataset_rows = fixture_release_layout
+
+        with patch(
+            "otai.commands.schema_builder._ensure_s3_access",
+            wraps=commands.schema_builder._ensure_s3_access,
+        ) as mock_ensure_s3_access:
+            # Cold: release isn't cached yet, so run_sql builds it -
+            # build_release_schema calls _ensure_s3_access internally.
+            commands.run_sql(
+                tmp_path,
+                "SELECT * FROM target",
+                fetch_xml=self._fetch_xml(),
+                fetch_croissant=self._fetch_croissant(),
+                base_uri=base_uri,
+                now=self.NOW,
+            )
+            assert mock_ensure_s3_access.call_count >= 1
+            for call in mock_ensure_s3_access.call_args_list:
+                assert call.args[1] == base_uri
+            mock_ensure_s3_access.reset_mock()
+
+            # Warm: release is already cached, so run_sql takes the
+            # read-only branch - _ensure_s3_access must still run there.
+            result = commands.run_sql(
+                tmp_path,
+                "SELECT count(*) AS n FROM target",
+                fetch_xml=self._fetch_xml(),
+                fetch_croissant=self._fetch_croissant(),
+                base_uri=base_uri,
+                now=self.NOW,
+            )
+
+        assert result["ok"] is True
+        mock_ensure_s3_access.assert_called_once()
+        _conn_arg, base_uri_arg = mock_ensure_s3_access.call_args.args
+        assert base_uri_arg == base_uri
+
     def test_rejects_non_select_with_guardrail_violation(
         self, tmp_path, fixture_release_layout
     ):
