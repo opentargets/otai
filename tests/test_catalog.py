@@ -23,7 +23,7 @@ def test_connect_creates_catalog_file_when_absent(tmp_path):
 
 def test_connect_reuses_existing_catalog_file(tmp_path):
     conn1 = catalog.connect_catalog(tmp_path)
-    conn1.execute('CREATE SCHEMA "26.06"')
+    conn1.execute(f'CREATE SCHEMA {catalog.LAKE_ALIAS}."26.06"')
     conn1.close()
 
     conn2 = catalog.connect_catalog(tmp_path)
@@ -55,17 +55,17 @@ def test_connect_creates_parent_cache_dir_if_missing(tmp_path):
 
 
 def test_connect_catalog_retries_then_succeeds_on_lock_contention(tmp_path):
-    real_connect = duckdb.connect
+    real_new_lake_connection = catalog._new_lake_connection
     calls = []
 
-    def flaky_connect(path, *args, **kwargs):
-        calls.append(path)
+    def flaky(catalog_path, data_path):
+        calls.append(catalog_path)
         if len(calls) < 3:
             raise duckdb.IOException("Could not set lock on file (simulated)")
-        return real_connect(path, *args, **kwargs)
+        return real_new_lake_connection(catalog_path, data_path)
 
     with (
-        patch("otai.catalog.duckdb.connect", side_effect=flaky_connect),
+        patch("otai.catalog._new_lake_connection", side_effect=flaky),
         patch("otai.catalog.time.sleep"),
     ):
         conn = catalog.connect_catalog(tmp_path)
@@ -76,11 +76,11 @@ def test_connect_catalog_retries_then_succeeds_on_lock_contention(tmp_path):
 
 
 def test_connect_catalog_raises_after_exhausting_retries(tmp_path):
-    def always_locked(path, *args, **kwargs):
+    def always_locked(catalog_path, data_path):
         raise duckdb.IOException("Could not set lock on file (simulated)")
 
     with (
-        patch("otai.catalog.duckdb.connect", side_effect=always_locked),
+        patch("otai.catalog._new_lake_connection", side_effect=always_locked),
         patch("otai.catalog.time.sleep"),
         pytest.raises(duckdb.IOException),
     ):
@@ -93,7 +93,7 @@ def test_try_connect_readonly_returns_none_when_catalog_does_not_exist(tmp_path)
 
 def test_try_connect_readonly_reads_existing_schemas(tmp_path):
     conn = catalog.connect_catalog(tmp_path)
-    conn.execute('CREATE SCHEMA "26.06"')
+    conn.execute(f'CREATE SCHEMA {catalog.LAKE_ALIAS}."26.06"')
     conn.close()
 
     ro_conn = catalog.try_connect_readonly(tmp_path)
@@ -107,8 +107,8 @@ def test_try_connect_readonly_reads_existing_schemas(tmp_path):
 def test_try_connect_readonly_returns_none_on_lock_contention(tmp_path):
     catalog.connect_catalog(tmp_path).close()  # ensure the file exists
 
-    def always_locked(path, *args, **kwargs):
+    def always_locked(catalog_path):
         raise duckdb.IOException("Could not set lock on file (simulated)")
 
-    with patch("otai.catalog.duckdb.connect", side_effect=always_locked):
+    with patch("otai.catalog._new_readonly_lake_connection", side_effect=always_locked):
         assert catalog.try_connect_readonly(tmp_path) is None
